@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "outDir": "./build/",
+        "sourceMap": true,
+        "strict": true,
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "target": "ES2017",
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "experimentalDecorators": true,
+        "allowJs": true,
+        "noImplicitAny": false,
+        "paths": {
+            "@/*":["src/*"]
+        },
+        "baseUrl": "."
+    },
+    "include": [
+        "./src/**/*",
+        "./builder/**/*"
+    ]
+}
