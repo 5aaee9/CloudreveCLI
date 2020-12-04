@@ -10,12 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        system: [node14-linux-x64]
+        system: [node12-linux-x64]
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v1
       with:
-        node-version: 14
+        node-version: 12
 
     - name: Install
       run: yarn install
