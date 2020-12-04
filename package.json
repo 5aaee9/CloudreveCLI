@@ -42,5 +42,10 @@
         "node-fetch": "^2.6.1",
         "ora": "^5.1.0",
         "reflect-metadata": "^0.1.13"
+    },
+    "bin": "./src/default.js",
+    "pkg": {
+        "scripts": ["./src/**/*.js"],
+        "assets": ["./package.json"]
     }
 }
