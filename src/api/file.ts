@@ -4,6 +4,7 @@ import { serializeQuery } from '@/utils/web'
 import { siteConfig } from '@/api/site'
 import path from 'path'
 import fs from 'fs'
+import { getHeaders } from './utils'
 
 
 type UploadToken = {
@@ -20,10 +21,7 @@ export async function createUploadRequest(fileName: string, filePath: string): P
     })
 
     const res = await fetch(`${config.get('site:url')}/api/v3/file/upload/credential?${query}`, {
-        headers: {
-            'content-type': 'application/json',
-            'Cookie': config.get('site:session'),
-        },
+        headers: getHeaders(),
     })
 
     const body = await res.json()
@@ -77,13 +75,15 @@ export async function uploadFile(
     return null
 }
 
+type TreeType = 'file' | 'dir'
+
 type Tree = {
     id: string
     name: string
     path: string
     pic: string
     size: number
-    type: 'file' | 'dir'
+    type: TreeType
     date: string
 }
 
@@ -92,12 +92,9 @@ type ListResponse = {
     parent: string
 }
 
-async function listDir(dir: string): Promise<ListResponse> {
+export async function listDir(dir: string): Promise<ListResponse> {
     const res = await fetch(`${config.get('site:url')}/api/v3/directory/${dir}`, {
-        headers: {
-            'content-type': 'application/json',
-            'Cookie': config.get('site:session'),
-        },
+        headers: getHeaders(),
     })
 
     const data = await res.json()
@@ -109,15 +106,12 @@ async function listDir(dir: string): Promise<ListResponse> {
     return data.data
 }
 
-function isFile(item: Tree) {
-    return item.type === 'file'
-}
-
-
-export async function findTreeById(filePath: string): Promise<Tree> {
+export async function findTreeById(filePath: string, type?: TreeType): Promise<Tree> {
     const {objects} = await listDir(path.dirname(filePath))
 
-    const obj = objects.filter(isFile).filter(it => it.name === path.basename(filePath))
+    const obj = objects
+        .filter(it => (type ? it.type === type : true))
+        .filter(it => it.name === path.basename(filePath))
 
     const data = obj.pop()
 
@@ -130,10 +124,7 @@ export async function findTreeById(filePath: string): Promise<Tree> {
 
 export async function getDownloadLink(fileId: string): Promise<string> {
     const res = await fetch(`${config.get('site:url')}/api/v3/file/download/${fileId}`, {
-        headers: {
-            'content-type': 'application/json',
-            'Cookie': config.get('site:session'),
-        },
+        headers: getHeaders(),
         method: 'put',
     })
 
@@ -144,4 +135,21 @@ export async function getDownloadLink(fileId: string): Promise<string> {
     }
 
     return data.data
+}
+
+export async function deleteTreeById(tree: Tree): Promise<void> {
+    const res = await fetch(`${config.get('site:url')}/api/v3/object`, {
+        headers: getHeaders(),
+        method: 'delete',
+        body: JSON.stringify({
+            items: tree.type === 'file' ? [tree.id] : [],
+            dirs: tree.type === 'dir' ? [tree.id] : [],
+        }),
+    })
+
+    const data = await res.json()
+
+    if (data.code !== 0) {
+        throw new Error(data.msg)
+    }
 }

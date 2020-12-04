@@ -4,7 +4,7 @@ import { downloadFile } from '@/utils/download'
 import fs from 'fs'
 import path from 'path'
 
-export default class FileUploadCommand extends Command {
+export default class FileDownloadCommand extends Command {
     static description = 'Download file from cloudreve.'
 
     static args = [{
@@ -13,10 +13,10 @@ export default class FileUploadCommand extends Command {
     }]
 
     async run(): Promise<null> {
-        const { args } = this.parse(FileUploadCommand)
+        const { args } = this.parse(FileDownloadCommand)
         const { remoteFile } = args
 
-        const tree = await findTreeById(remoteFile)
+        const tree = await findTreeById(remoteFile, 'file')
         const url = await getDownloadLink(tree.id)
 
         const stream = fs.createWriteStream(path.basename(remoteFile))
