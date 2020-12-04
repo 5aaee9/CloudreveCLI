@@ -1,4 +1,4 @@
-import { Command } from '@oclif/command'
+import { Command, flags } from '@oclif/command'
 import fsExtra from 'fs-extra'
 import path from 'path'
 import { createUploadRequest, uploadFile } from '@/api/file'
@@ -7,6 +7,13 @@ import { displayTraffic, parseTraffic  } from '@/utils/unit'
 
 export default class FileUploadCommand extends Command {
     static description = 'Upload file to cloudreve storage'
+
+    static flags = {
+        overwriteFileName: flags.string({
+            char: 'o',
+            description: 'Force overwrite upload fileName',
+        }),
+    }
 
     static examples = [
         '$ cloudreve-cli file:upload ./file.data /Remote/Dir\n' +
@@ -22,7 +29,8 @@ export default class FileUploadCommand extends Command {
     }]
 
     async run(): Promise<null> {
-        const { args } = this.parse(FileUploadCommand)
+        const { args, flags } = this.parse(FileUploadCommand)
+        const { overwriteFileName } = flags
 
         const { localFile, remoteDir } = args
 
@@ -31,7 +39,7 @@ export default class FileUploadCommand extends Command {
         }
 
         const fileName = path.basename(localFile)
-        const token = await createUploadRequest(fileName, remoteDir)
+        const token = await createUploadRequest(overwriteFileName ?? fileName, remoteDir)
 
         const spinner = ora('Uploading file').start()
 
