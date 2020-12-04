@@ -14,7 +14,7 @@
     "scripts": {
         "dev": "cross-env NODE_ENV=development ts-node -r tsconfig-paths/register src/default.ts",
         "lint": "eslint --ext .js,.ts src",
-        "build": "tsc"
+        "build": "ttsc"
     },
     "devDependencies": {
         "@types/config": "^0.0.37",
