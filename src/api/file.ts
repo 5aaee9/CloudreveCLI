@@ -76,3 +76,72 @@ export async function uploadFile(
 
     return null
 }
+
+type Tree = {
+    id: string
+    name: string
+    path: string
+    pic: string
+    size: number
+    type: 'file' | 'dir'
+    date: string
+}
+
+type ListResponse = {
+    objects: Tree[]
+    parent: string
+}
+
+async function listDir(dir: string): Promise<ListResponse> {
+    const res = await fetch(`${config.get('site:url')}/api/v3/directory/${dir}`, {
+        headers: {
+            'content-type': 'application/json',
+            'Cookie': config.get('site:session'),
+        },
+    })
+
+    const data = await res.json()
+
+    if (data.code !== 0) {
+        throw new Error(data.msg)
+    }
+
+    return data.data
+}
+
+function isFile(item: Tree) {
+    return item.type === 'file'
+}
+
+
+export async function findTreeById(filePath: string): Promise<Tree> {
+    const {objects} = await listDir(path.dirname(filePath))
+
+    const obj = objects.filter(isFile).filter(it => it.name === path.basename(filePath))
+
+    const data = obj.pop()
+
+    if (!data) {
+        throw new Error('File not found')
+    }
+
+    return data
+}
+
+export async function getDownloadLink(fileId: string): Promise<string> {
+    const res = await fetch(`${config.get('site:url')}/api/v3/file/download/${fileId}`, {
+        headers: {
+            'content-type': 'application/json',
+            'Cookie': config.get('site:session'),
+        },
+        method: 'put',
+    })
+
+    const data = await res.json()
+
+    if (data.code !== 0) {
+        throw new Error(data.msg)
+    }
+
+    return data.data
+}
