@@ -27,7 +27,7 @@ jobs:
       run: yarn run build
 
     - name: Build pkg
-      run: rm -rf src && mv build/src src && npx pkg . -t ${{ matrix.system }} -o cloudreve-cli-${{ matrix.system }}
+      run: rm -rf src && mv build src && npx pkg . -t ${{ matrix.system }} -o cloudreve-cli-${{ matrix.system }}
 
     - name: Upx bin
       run: |
