@@ -16,8 +16,12 @@ export default class FileDeleteCommand extends Command {
         const spinner = ora('Deleting tree').start()
         const tree = await findTreeById(remoteFile)
 
-        await deleteTreeById(tree)
+        if (tree !== null) {
+            await deleteTreeById(tree)
+            spinner.succeed('Delete success')
+            return
+        }
 
-        spinner.succeed('Delete success')
+        spinner.warn('File not found')
     }
 }

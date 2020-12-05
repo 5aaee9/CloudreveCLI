@@ -106,7 +106,7 @@ export async function listDir(dir: string): Promise<ListResponse> {
     return data.data
 }
 
-export async function findTreeById(filePath: string, type?: TreeType): Promise<Tree> {
+export async function findTreeById(filePath: string, type?: TreeType): Promise<Tree | null> {
     const {objects} = await listDir(path.dirname(filePath))
 
     const obj = objects
@@ -116,7 +116,7 @@ export async function findTreeById(filePath: string, type?: TreeType): Promise<T
     const data = obj.pop()
 
     if (!data) {
-        throw new Error('File not found')
+        return null
     }
 
     return data
@@ -145,6 +145,20 @@ export async function deleteTreeById(tree: Tree): Promise<void> {
             items: tree.type === 'file' ? [tree.id] : [],
             dirs: tree.type === 'dir' ? [tree.id] : [],
         }),
+    })
+
+    const data = await res.json()
+
+    if (data.code !== 0) {
+        throw new Error(data.msg)
+    }
+}
+
+export async function mkdir(dir: string): Promise<void> {
+    const res = await fetch(`${config.get('site:url')}/api/v3/directory`, {
+        headers: getHeaders(),
+        method: 'put',
+        body: JSON.stringify({path: dir}),
     })
 
     const data = await res.json()

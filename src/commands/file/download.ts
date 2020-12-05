@@ -17,6 +17,12 @@ export default class FileDownloadCommand extends Command {
         const { remoteFile } = args
 
         const tree = await findTreeById(remoteFile, 'file')
+
+        if (!tree) {
+            this.log('Error: File not found')
+            process.exit(1)
+        }
+
         const url = await getDownloadLink(tree.id)
 
         const stream = fs.createWriteStream(path.basename(remoteFile))

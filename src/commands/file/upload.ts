@@ -1,9 +1,30 @@
 import { Command, flags } from '@oclif/command'
 import fsExtra from 'fs-extra'
-import path from 'path'
-import { createUploadRequest, uploadFile } from '@/api/file'
+import fs from 'fs'
+import { createUploadRequest, uploadFile, mkdir, findTreeById, deleteTreeById } from '@/api/file'
 import ora from 'ora'
 import { displayTraffic, parseTraffic  } from '@/utils/unit'
+import path from 'path'
+import { walk } from '@/utils/files'
+
+async function upload(localFile: string, remoteDir: string, overwriteFileName?: string): Promise<void> {
+    const token = await createUploadRequest(overwriteFileName ?? path.basename(localFile), remoteDir)
+
+    const spinner = ora(`Uploading ${localFile}`).start()
+
+    spinner.color = 'yellow'
+    const display = (d: number) => displayTraffic(parseTraffic(d))
+
+    try {
+        await uploadFile(token, localFile, (total, cur) => {
+            spinner.text = `Uploading ${localFile}: ${display(cur)} / ${display(total)}`
+        })
+
+        spinner.succeed()
+    } catch (err) {
+        spinner.fail()
+    }
+}
 
 export default class FileUploadCommand extends Command {
     static description = 'Upload file to cloudreve storage'
@@ -12,6 +33,10 @@ export default class FileUploadCommand extends Command {
         overwriteFileName: flags.string({
             char: 'o',
             description: 'Force overwrite upload fileName',
+        }),
+        reduce: flags.boolean({
+            char: 'r',
+            description: 'Uploading file reduce',
         }),
     }
 
@@ -28,9 +53,9 @@ export default class FileUploadCommand extends Command {
         required: true,
     }]
 
-    async run(): Promise<null> {
+    async run(): Promise<void> {
         const { args, flags } = this.parse(FileUploadCommand)
-        const { overwriteFileName } = flags
+        const { overwriteFileName, reduce } = flags
 
         const { localFile, remoteDir } = args
 
@@ -38,24 +63,46 @@ export default class FileUploadCommand extends Command {
             this.log(`Error: ${localFile} is not exist`)
         }
 
-        const fileName = path.basename(localFile)
-        const token = await createUploadRequest(overwriteFileName ?? fileName, remoteDir)
+        const pathInfo = await fs.promises.stat(localFile)
 
-        const spinner = ora('Uploading file').start()
-
-        spinner.color = 'yellow'
-        const display = (d: number) => displayTraffic(parseTraffic(d))
-
-        try {
-            await uploadFile(token, localFile, (total, cur) => {
-                spinner.text = `Uploading: ${display(cur)} / ${display(total)}`
-            })
-
-            spinner.succeed()
-        } catch (err) {
-            spinner.fail()
+        if (pathInfo.isDirectory() && !reduce) {
+            this.log(`${localFile} is a directory (not uploaded).`)
+            process.exit(1)
         }
 
-        return null
+        if (reduce && overwriteFileName) {
+            this.log('Overwrite filename is not support when reduce uploading.')
+            process.exit(1)
+        }
+
+        if (pathInfo.isFile()) {
+            await upload(localFile, remoteDir, overwriteFileName)
+        } else {
+            // Path is Dir
+            this.log('Uploading file')
+
+            for await (const entry of walk(localFile)) {
+                const remoteEntryDir = path.join(remoteDir, path.dirname(entry))
+
+                if (!(await findTreeById(remoteEntryDir, 'dir'))) {
+                    await mkdir(remoteEntryDir)
+                }
+
+                const remoteTree = await findTreeById(path.join(remoteDir, entry), 'file')
+
+                if (remoteTree) {
+                    const fileStat = await fs.promises.stat(entry)
+
+                    if (fileStat.size === remoteTree.size) {
+                        this.log(`Skip file with same size: ${entry}`)
+                        continue
+                    } else {
+                        await deleteTreeById(remoteTree)
+                    }
+                }
+
+                await upload(entry, remoteEntryDir)
+            }
+        }
     }
 }
