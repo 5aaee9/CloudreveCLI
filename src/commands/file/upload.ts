@@ -22,7 +22,7 @@ async function upload(localFile: string, remoteDir: string, overwriteFileName?: 
 
         spinner.succeed()
     } catch (err) {
-        spinner.fail()
+        spinner.fail(`Error ${localFile}:${err.message}`)
     }
 }
 
@@ -82,19 +82,21 @@ export default class FileUploadCommand extends Command {
             this.log('Uploading file')
 
             for await (const entry of walk(localFile)) {
-                const remoteEntryDir = path.join(remoteDir, path.dirname(entry))
+                const absPath = entry.substr(localFile.length)
+
+                const remoteEntryDir = path.join(remoteDir, path.dirname(absPath))
 
                 if (!(await findTreeById(remoteEntryDir, 'dir'))) {
                     await mkdir(remoteEntryDir)
                 }
 
-                const remoteTree = await findTreeById(path.join(remoteDir, entry), 'file')
+                const remoteTree = await findTreeById(path.join(remoteDir, absPath), 'file')
 
                 if (remoteTree) {
                     const fileStat = await fs.promises.stat(entry)
 
                     if (fileStat.size === remoteTree.size) {
-                        this.log(`Skip file with same size: ${entry}`)
+                        this.log(`Skip file with same size: ${absPath}`)
                         continue
                     } else {
                         await deleteTreeById(remoteTree)
