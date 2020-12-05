@@ -82,7 +82,7 @@ export default class FileUploadCommand extends Command {
             this.log('Uploading file')
 
             for await (const entry of walk(localFile)) {
-                const absPath = entry.substr(localFile.length)
+                const absPath = path.resolve(entry).substr(path.resolve(localFile).length)
 
                 const remoteEntryDir = path.join(remoteDir, path.dirname(absPath))
 

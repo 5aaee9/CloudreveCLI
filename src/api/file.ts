@@ -107,19 +107,23 @@ export async function listDir(dir: string): Promise<ListResponse> {
 }
 
 export async function findTreeById(filePath: string, type?: TreeType): Promise<Tree | null> {
-    const {objects} = await listDir(path.dirname(filePath))
+    try {
+        const {objects} = await listDir(path.dirname(filePath))
 
-    const obj = objects
-        .filter(it => (type ? it.type === type : true))
-        .filter(it => it.name === path.basename(filePath))
+        const obj = objects
+            .filter(it => (type ? it.type === type : true))
+            .filter(it => it.name === path.basename(filePath))
 
-    const data = obj.pop()
+        const data = obj.pop()
 
-    if (!data) {
+        if (!data) {
+            return null
+        }
+
+        return data
+    } catch (e) {
         return null
     }
-
-    return data
 }
 
 export async function getDownloadLink(fileId: string): Promise<string> {
@@ -155,6 +159,12 @@ export async function deleteTreeById(tree: Tree): Promise<void> {
 }
 
 export async function mkdir(dir: string): Promise<void> {
+    const doc = await findTreeById(path.dirname(dir), 'dir')
+
+    if (path.dirname(dir) !== '/' && !doc) {
+        await mkdir(path.dirname(dir))
+    }
+
     const res = await fetch(`${config.get('site:url')}/api/v3/directory`, {
         headers: getHeaders(),
         method: 'put',
