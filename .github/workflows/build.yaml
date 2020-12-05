@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        system: [node12-linux-x64]
+        system: [node12-linux-x64, node12-win-x64]
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v1
@@ -27,13 +27,8 @@ jobs:
       run: yarn run build
 
     - name: Build pkg
-      run: rm -rf src && mv build src && npx pkg . -t ${{ matrix.system }} -o cloudreve-cli-${{ matrix.system }}
+      run: rm -rf src && mv build src && npx pkg --options max_old_space_size=4096 . -t ${{ matrix.system }} -o cloudreve-cli-${{ matrix.system }}
 
-    - name: Upx bin
-      run: |
-        wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
-        tar -xvJf upx-3.96-amd64_linux.tar.xz
-        upx-3.96-amd64_linux/upx cloudreve-cli-*
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
