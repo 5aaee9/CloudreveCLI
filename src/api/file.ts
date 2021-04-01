@@ -93,7 +93,7 @@ type ListResponse = {
 }
 
 export async function listDir(dir: string): Promise<ListResponse> {
-    const res = await fetch(`${config.get('site:url')}/api/v3/directory${encodeURIComponent(dir)}`, {
+    const res = await fetch(`${config.get('site:url')}/api/v3/directory${dir.startsWith('/') ? dir : `/${dir}`}`, {
         headers: getHeaders(),
     })
 
