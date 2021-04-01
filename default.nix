@@ -5,7 +5,7 @@
 
 stdenv.mkDerivation rec {
     pname = "cloudreve-cli";
-    version = "latest";
+    version = "0.0.2";
 
     nodeModules = mkYarnModules {
         name = "${pname}-node-modules-${version}";
