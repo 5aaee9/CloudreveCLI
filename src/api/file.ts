@@ -93,7 +93,7 @@ type ListResponse = {
 }
 
 export async function listDir(dir: string): Promise<ListResponse> {
-    const res = await fetch(`${config.get('site:url')}/api/v3/directory/${dir}`, {
+    const res = await fetch(`${config.get('site:url')}/api/v3/directory${encodeURIComponent(dir)}`, {
         headers: getHeaders(),
     })
 
@@ -108,8 +108,10 @@ export async function listDir(dir: string): Promise<ListResponse> {
 
 export async function findTreeById(filePath: string, type?: TreeType): Promise<Tree | null> {
     try {
+        console.log(filePath)
         const {objects} = await listDir(path.dirname(filePath))
 
+        console.log(objects)
         const obj = objects
             .filter(it => (type ? it.type === type : true))
             .filter(it => it.name === path.basename(filePath))
@@ -122,6 +124,7 @@ export async function findTreeById(filePath: string, type?: TreeType): Promise<T
 
         return data
     } catch (e) {
+        console.error(e)
         return null
     }
 }
@@ -161,6 +164,8 @@ export async function deleteTreeById(tree: Tree): Promise<void> {
 export async function mkdir(dir: string): Promise<void> {
     const doc = await findTreeById(path.dirname(dir), 'dir')
 
+    console.log(path.dirname(dir))
+    console.log(doc)
     if (path.dirname(dir) !== '/' && !doc) {
         await mkdir(path.dirname(dir))
     }
@@ -172,6 +177,8 @@ export async function mkdir(dir: string): Promise<void> {
     })
 
     const data = await res.json()
+
+    console.log(data)
 
     if (data.code !== 0) {
         throw new Error(data.msg)
