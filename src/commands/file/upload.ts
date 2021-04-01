@@ -57,7 +57,12 @@ export default class FileUploadCommand extends Command {
         const { args, flags } = this.parse(FileUploadCommand)
         const { overwriteFileName, reduce } = flags
 
-        const { localFile, remoteDir } = args
+        const { localFile } = args
+        let { remoteDir } = args
+
+        if (!remoteDir.startsWith('/')) {
+            remoteDir = `/${remoteDir}`
+        }
 
         if (!(await fsExtra.pathExists(localFile))) {
             this.log(`Error: ${localFile} is not exist`)
