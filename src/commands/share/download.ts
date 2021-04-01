@@ -1,5 +1,4 @@
 import { Command } from '@oclif/command'
-import { findTreeById, getDownloadLink } from '@/api/file'
 import { downloadFile } from '@/utils/download'
 import fs from 'fs'
 import path from 'path'
@@ -19,10 +18,11 @@ export default class ShareFileDownloadCommand extends Command {
 
     async run(): Promise<void> {
         const { args } = this.parse(ShareFileDownloadCommand)
-        let { remoteFile, remoteUrl } = args
+        const { remoteUrl } = args
+        let { remoteFile } = args
 
         if (!remoteFile.startsWith('/')) {
-            remoteFile = '/' + remoteFile
+            remoteFile = `/${remoteFile}`
         }
 
         const url = new URL(remoteUrl)
@@ -54,6 +54,7 @@ export default class ShareFileDownloadCommand extends Command {
         const dUrl = await requestDownload(url.origin, shareName, session, remoteFile)
 
         const stream = fs.createWriteStream(path.basename(remoteFile))
+
         await downloadFile(dUrl, stream, tree.size)
     }
 }
