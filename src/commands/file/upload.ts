@@ -1,11 +1,11 @@
 import { Command, flags } from '@oclif/command'
 import fsExtra from 'fs-extra'
 import fs from 'fs'
-import { createUploadRequest, uploadFile, mkdir, findTreeById, deleteTreeById } from '@/api/file'
+import { createUploadRequest, uploadFile, mkdir, findTreeById, deleteTreeById, walkRemote, TreeType } from '@/api/file'
 import ora from 'ora'
 import { displayTraffic, parseTraffic  } from '@/utils/unit'
 import path from 'path'
-import { walk } from '@/utils/files'
+import { exist, walk } from '@/utils/files'
 
 async function upload(localFile: string, remoteDir: string, overwriteFileName?: string): Promise<void> {
     const token = await createUploadRequest(overwriteFileName ?? path.basename(localFile), remoteDir)
@@ -38,6 +38,10 @@ export default class FileUploadCommand extends Command {
             char: 'r',
             description: 'Uploading file reduce',
         }),
+        sync: flags.boolean({
+            char: 's',
+            description: 'Sync mode will delete remote file if not persist in local',
+        }),
     }
 
     static examples = [
@@ -55,13 +59,17 @@ export default class FileUploadCommand extends Command {
 
     async run(): Promise<void> {
         const { args, flags } = this.parse(FileUploadCommand)
-        const { overwriteFileName, reduce } = flags
+        const { overwriteFileName, reduce, sync } = flags
 
         const { localFile } = args
         let { remoteDir } = args
 
         if (!remoteDir.startsWith('/')) {
             remoteDir = `/${remoteDir}`
+        }
+
+        if (remoteDir.endsWith('/')) {
+            remoteDir = remoteDir.substr(0, remoteDir.length - 1)
         }
 
         if (!(await fsExtra.pathExists(localFile))) {
@@ -83,7 +91,27 @@ export default class FileUploadCommand extends Command {
         if (pathInfo.isFile()) {
             await upload(localFile, remoteDir, overwriteFileName)
         } else {
-            // Path is Dir
+            if (sync) {
+                const walkItem = async (item: string, type: TreeType) => {
+                    const file = item.substr(remoteDir.length)
+                    const haveIt = await exist(path.join(localFile, file))
+
+                    if (!haveIt) {
+                        const tree = await findTreeById(item, type)
+
+                        if (tree) {
+                            await deleteTreeById(tree)
+                            console.log(`Remote file/dir deleted: ${file}`)
+
+                            return true
+                        }
+                    }
+
+                    return false
+                }
+
+                await walkRemote(remoteDir, walkItem)
+            }
             this.log('Uploading file')
 
             for await (const entry of walk(localFile)) {

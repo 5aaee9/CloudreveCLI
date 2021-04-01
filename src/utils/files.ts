@@ -9,3 +9,9 @@ export async function *walk(dir: string): AsyncGenerator<string> {
         else if (d.isFile()) yield entry;
     }
 }
+
+export async function exist(f: string): Promise<boolean> {
+    return fs.promises.access(f)
+        .then(() => true)
+        .catch(() => false)
+}

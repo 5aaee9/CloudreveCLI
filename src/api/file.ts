@@ -75,7 +75,7 @@ export async function uploadFile(
     return null
 }
 
-type TreeType = 'file' | 'dir'
+export type TreeType = 'file' | 'dir'
 
 type Tree = {
     id: string
@@ -121,7 +121,6 @@ export async function findTreeById(filePath: string, type?: TreeType): Promise<T
 
         return data
     } catch (e) {
-        console.error(e)
         return null
     }
 }
@@ -175,5 +174,24 @@ export async function mkdir(dir: string): Promise<void> {
 
     if (data.code !== 0) {
         throw new Error(data.msg)
+    }
+}
+
+type ProcessItem = (url: string, type: TreeType) => Promise<boolean>
+
+export async function walkRemote(dir: string, callback: ProcessItem): Promise<void> {
+    try {
+        const list = await listDir(dir)
+
+        for (const item of list.objects) {
+            const location = path.join(dir, item.name)
+            const result = await callback(location, item.type)
+
+            if (item.type === 'dir' && (!result)) {
+                await walkRemote(location, callback)
+            }
+        }
+    } catch (err) {
+        // TODO
     }
 }
