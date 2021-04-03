@@ -68,7 +68,8 @@ export default class FileUploadCommand extends Command {
             remoteDir = `/${remoteDir}`
         }
 
-        if (remoteDir.endsWith('/')) {
+        // When remotedir not endswith slash and not the root dir
+        if (remoteDir.endsWith('/') && remoteDir !== "/") {
             remoteDir = remoteDir.substr(0, remoteDir.length - 1)
         }
 
