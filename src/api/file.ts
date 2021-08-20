@@ -12,11 +12,13 @@ type UploadToken = {
     policy: string
 }
 
-export async function createUploadRequest(fileName: string, filePath: string): Promise<UploadToken> {
+export async function createUploadRequest(realFile: string, filePath: string, overwriteFileName?: string): Promise<UploadToken> {
+    const file = await fs.promises.stat(realFile)
+
     const query = serializeQuery({
         path: filePath,
-        size: 50,
-        name: fileName,
+        size: file.size,
+        name: overwriteFileName ?? path.basename(realFile),
         type: 'remote',
     })
 
@@ -52,14 +54,19 @@ export async function uploadFile(
             cur += buffer.length
             progressHook(fileInfo.size, cur)
         })
+
     }
+
+    const { size } = fileInfo
 
     const res = await fetch(`${policy.upUrl}`, {
         headers: {
             'x-filename': encodeURIComponent(path.basename(file)),
+            'x-overwrite': 'false',
             'x-policy': token.policy,
             'authorization': token.token,
             'Content-Type': 'application/octet-stream',
+            'Content-Length': size.toString()
         },
         method: 'POST',
         body: stream,
@@ -69,6 +76,7 @@ export async function uploadFile(
     const data = await res.json()
 
     if (data.code !== 0) {
+        console.log(data)
         throw new Error(data.msg)
     }
 

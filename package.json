@@ -1,7 +1,7 @@
 {
     "license": "MIT",
     "name": "cloudreve-cli",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "main": "src/default.ts",
     "oclif": {
         "commands": "./src/commands",

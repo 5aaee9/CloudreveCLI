@@ -8,7 +8,7 @@ import path from 'path'
 import { exist, walk } from '@/utils/files'
 
 async function upload(localFile: string, remoteDir: string, overwriteFileName?: string): Promise<void> {
-    const token = await createUploadRequest(overwriteFileName ?? path.basename(localFile), remoteDir)
+    const token = await createUploadRequest(localFile, remoteDir, overwriteFileName)
 
     const spinner = ora(`Uploading ${localFile}`).start()
 
