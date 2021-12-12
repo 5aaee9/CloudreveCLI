@@ -1,38 +1,13 @@
-{
-    stdenv, fetchFromGitHub, nodejs-12_x, yarn,
-    makeWrapper, mkYarnModules, pkgs
-}:
-
-stdenv.mkDerivation rec {
-    pname = "cloudreve-cli";
-    version = "0.0.3";
-
-    nodeModules = mkYarnModules {
-        name = "${pname}-node-modules-${version}";
-        inherit pname version;
-        # it is vitally important the the package.json has name and version fields
-        packageJSON = ./package.json;
-        yarnLock = ./yarn.lock;
-    };
-
-    nativeBuildInputs = [ makeWrapper ];
-    buildInputs = [ nodejs-12_x yarn ];
-
+(import
+  (
+    let
+      lock = builtins.fromJSON (builtins.readFile ./flake.lock);
+    in
+    fetchTarball {
+      url = "https://github.com/edolstra/flake-compat/archive/${lock.nodes.flake-compat.locked.rev}.tar.gz";
+      sha256 = lock.nodes.flake-compat.locked.narHash;
+    }
+  )
+  {
     src = ./.;
-
-    meta.description = "CLI for Cloudreve";
-
-    buildPhase = ''
-        ln -s ${nodeModules}/node_modules .
-        yarn run --offline build
-    '';
-
-    installPhase = ''
-        mkdir -p $out/bin/
-        cp -r build $out/src
-        cp package.json $out/
-        cp -r ${nodeModules}/node_modules $out/
-        makeWrapper "${nodejs-12_x}/bin/node" "$out/bin/cloudreve-cli" \
-            --add-flags "$out/src/default.js"
-    '';
-}
+  }).defaultNix
