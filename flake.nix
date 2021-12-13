@@ -60,7 +60,7 @@
 
           fetch-cloudreve = with pkgs; { share ? "", shareFile ? "", sha256 ? "" }: stdenv.mkDerivation {
             name = "cloudreve-share-${shareFile}";
-            builder = writeScript "${name}-builder.sh" ''
+            builder = writeScript "${shareFile}-builder.sh" ''
               set -o noglob
 
               mkdir download
