@@ -77,7 +77,7 @@
               set +o noglob
             '';
 
-            nativeBuildInputs = [ cloudreve-cli ];
+            nativeBuildInputs = [ cloudreve-cli coreutils ];
             outputHashAlgo = "sha256";
             outputHash = sha256;
             outputHashMode = "recursive";
