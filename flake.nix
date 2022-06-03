@@ -37,7 +37,7 @@
             inherit pname version;
 
             nativeBuildInputs = [ makeWrapper ];
-            buildInputs = [ nodejs-12_x yarn ];
+            buildInputs = [ nodejs yarn ];
 
             src = ./.;
 
@@ -53,7 +53,7 @@
               cp -r build $out/src
               cp package.json $out/
               cp -r ${nodeModules}/node_modules $out/
-              makeWrapper "${nodejs-12_x}/bin/node" "$out/bin/cloudreve-cli" \
+              makeWrapper "${nodejs}/bin/node" "$out/bin/cloudreve-cli" \
                   --add-flags "$out/src/default.js"
             '';
           };
